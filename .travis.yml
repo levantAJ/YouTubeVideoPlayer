@@ -1,4 +1,4 @@
-language: objective-c
+language: swift
 xcode_project: YouTubePlayer.xcodeproj
 xcode_scheme: YouTubePlayerTests
 xcode_destination: platform=iOS Simulator,OS=11.3,name=iPhone X
