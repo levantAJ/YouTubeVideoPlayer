@@ -1,3 +1,7 @@
+<p align="center" >
+  <img src="icon.png" title="YouTubePlayer logo" width='444' float=left>
+</p>
+
 [![Pod Version](https://cocoapod-badges.herokuapp.com/v/EmojiPicker/badge.png)](http://cocoadocs.org/docsets/EmojiPicker/)
 [![Pod Platform](https://cocoapod-badges.herokuapp.com/p/EmojiPicker/badge.png)](http://cocoadocs.org/docsets/EmojiPicker/)
 [![Pod License](https://cocoapod-badges.herokuapp.com/l/EmojiPicker/badge.png)](https://www.apache.org/licenses/LICENSE-2.0.html)
