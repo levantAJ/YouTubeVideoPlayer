@@ -9,38 +9,30 @@
 import UIKit
 import WebKit
 
+public protocol YouTubePlayerDelegate: class {
+    func youTubePlayer(_ player: YouTubePlayer, didStop videoId: String)
+    func youTubePlayer(_ player: YouTubePlayer, willPresent videoId: String)
+    func youTubePlayer(_ player: YouTubePlayer, didPresent videoId: String)
+}
+
 open class YouTubePlayer: UIView {
-    var activeArea: UIEdgeInsets = UIApplication.shared.safeAreaInsets
+    public static let videoIdKey = "videoIdKey"
+    public static let playerDidStop = Notification.Name(rawValue: "com.levantAJ.YouTubePlayer.playerDidStop")
+    public static let playerWillPresent = Notification.Name(rawValue: "com.levantAJ.YouTubePlayer.playerWillPresent")
+    public static let playerDidPresent = Notification.Name(rawValue: "com.levantAJ.YouTubePlayer.playerDidPresent")
+    public private(set) var videoId: String?
+    public var isAutoPlay: Bool = true
+    public var isLooped: Bool = true
+    public var pauseWhenIdle: Bool = false
+    public weak var delegate: YouTubePlayerDelegate?
+    
+    @objc dynamic var webView: WKWebView!
+    var activeArea: UIEdgeInsets = .zero
     var previewImageView: UIImageView!
     var backgroundVisualEffectView: UIVisualEffectView!
     var coverVisualEffectView: UIVisualEffectView!
-    var webView: WKWebView!
-    var loop: Bool = true
-    var beganPoint: CGPoint = .zero
-    var autoPlay: Bool = true
-    var hideWhenDismissed: Bool = true
-    var videoId: String?
-    static var defaultFrame: CGRect {
-        let safeArea = UIApplication.shared.safeAreaInsets
-        let space: CGFloat = 20
-        let width = UIScreen.main.bounds.width - safeArea.left - safeArea.right - space * 2
-        let height = 9 * width / 16
-        return CGRect(x: safeArea.left + space, y: safeArea.top, width: width, height: height)
-    }
-    
-    public static let shared: YouTubePlayer = {
-        let frame = YouTubePlayer.defaultFrame
-        let view = YouTubePlayer(frame: frame)
-        let safeArea = UIApplication.shared.safeAreaInsets
-        view.activeArea = UIEdgeInsets(top: safeArea.top, left: frame.minX, bottom: safeArea.bottom, right: frame.minX)
-        return view
-    }()
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setUpViews()
-    }
-    
+    var draggingBeganPoint: CGPoint = .zero
+    var initialFrame: CGRect = .zero
     open override var frame: CGRect {
         didSet {
             backgroundVisualEffectView?.frame.size = frame.size
@@ -50,8 +42,22 @@ open class YouTubePlayer: UIView {
         }
     }
     
+    public static let shared: YouTubePlayer = {
+        return YouTubePlayer(frame: .zero)
+    }()
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setUpViews()
+    }
+    
+    deinit {
+        removeObserver(self, forKeyPath: Constant.YouTubePlayer.webViewLoadingKeyPath)
+    }
+    
     public required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+        setUpViews()
     }
     
     open override func layoutSubviews() {
@@ -63,11 +69,28 @@ open class YouTubePlayer: UIView {
         shadowed(cornerRadius: webView.layer.cornerRadius)
     }
     
-    open func play(id: String, from view: UIView) {
+    open override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if let keyPath = keyPath,
+            keyPath == Constant.YouTubePlayer.webViewLoadingKeyPath,
+            let loading = change?[.newKey] as? Bool,
+            loading == true {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                if self?.isAutoPlay == true {
+                    self?.resume()
+                }
+                self?.previewImageView.image = nil
+                self?.previewImageView.isHidden = true
+                debugPrint("YouTubePlayer is loaded.")
+            }
+        }
+    }
+    
+    open func play(videoId: String, sourceView: UIView) {
+        layout(sourceView: sourceView)
         stop()
-        self.videoId = id
-        prepare(id: id)
-        present(from: view)
+        self.videoId = videoId
+        prepare(videoId: videoId)
+        present(sourceView: sourceView)
     }
     
     open func stop() {
@@ -78,21 +101,16 @@ open class YouTubePlayer: UIView {
         webView.load(request)
         previewImageView.image = nil
         coverVisualEffectView.alpha = 0
-        NotificationCenter.default.post(name: .playerDidStop, object: nil, userInfo: [Constant.YouTubePlayer.videoIdKey: stoppedVideoId as Any])
+        NotificationCenter.default.post(name: YouTubePlayer.playerDidStop, object: nil, userInfo: [YouTubePlayer.videoIdKey: stoppedVideoId as Any])
+        delegate?.youTubePlayer(self, didStop: stoppedVideoId!)
     }
-}
-
-// MARK: - WKNavigationDelegate
-
-extension YouTubePlayer: WKNavigationDelegate {
-    private func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        webView.body { [weak self] body in
-            guard let body = body,
-                !body.isEmpty else { return }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                self?.previewImageView.image = nil
-            }
-        }
+    
+    open func resume() {
+        webView.evaluateJavaScript("ytplayer.playVideo()")
+    }
+    
+    open func pause() {
+        webView.evaluateJavaScript("ytplayer.pauseVideo()")
     }
 }
 
@@ -101,7 +119,7 @@ extension YouTubePlayer: WKNavigationDelegate {
 extension YouTubePlayer {
     @objc func dragging(_ gesture: UIPanGestureRecognizer) {
         if gesture.state == .began {
-            beganPoint = gesture.location(in: gesture.view)
+            draggingBeganPoint = gesture.location(in: gesture.view)
         } else if gesture.state == .ended {
             if dismissIfNeeded(gesture: gesture) {
                 return
@@ -110,8 +128,8 @@ extension YouTubePlayer {
             return
         }
         let point = gesture.location(in: gesture.view)
-        let x = frame.minX + point.x - beganPoint.x
-        let y = frame.minY + point.y - beganPoint.y
+        let x = frame.minX + point.x - draggingBeganPoint.x
+        let y = frame.minY + point.y - draggingBeganPoint.y
         frame.origin = CGPoint(x: x, y: y)
         updateAlpha()
     }
@@ -120,18 +138,21 @@ extension YouTubePlayer {
 // MARK: - Privates
 
 extension YouTubePlayer {
-    private var safeArea: UIEdgeInsets {
-        if #available(iOS 11.0, *) {
-            return safeAreaInsets
-        }
-        return .zero
+    private func layout(sourceView: UIView) {
+        let safeArea = sourceView.safeArea
+        let padding: CGFloat = 20
+        let width = UIScreen.main.bounds.width - safeArea.left - safeArea.right - padding * 2
+        let height = 9 * width / 16
+        frame = CGRect(x: safeArea.left + padding, y: safeArea.top, width: width, height: height)
+        initialFrame = frame
+        activeArea = UIEdgeInsets(top: safeArea.top, left: initialFrame.minX, bottom: safeArea.bottom, right: initialFrame.minX)
     }
     
     private func dismissIfNeeded(gesture: UIPanGestureRecognizer) -> Bool {
         let velocity = gesture.velocity(in: gesture.view)
         guard velocity.x < -Constant.YouTubePlayer.horizontalVelocityThreshold
             || velocity.x > Constant.YouTubePlayer.horizontalVelocityThreshold else { return false }
-        let x = frame.origin.x < beganPoint.x ? -frame.width : UIScreen.main.bounds.width + frame.width
+        let x = frame.origin.x < draggingBeganPoint.x ? -frame.width : UIScreen.main.bounds.width + frame.width
         let y = frame.origin.y
         UIView.animate(withDuration: 0.1, delay: 0.0, options: [.curveEaseIn], animations: { [weak self] in
             self?.frame.origin = CGPoint(x: x, y: y)
@@ -148,15 +169,27 @@ extension YouTubePlayer {
         if frame.minX + frame.width <= Constant.YouTubePlayer.collasedSpace * 4 {
             x = Constant.YouTubePlayer.collasedSpace - frame.width
             alpha = 1
+            if pauseWhenIdle {
+                pause()
+            }
         } else if UIScreen.main.bounds.width - frame.minX <= Constant.YouTubePlayer.collasedSpace * 4 {
             x = UIScreen.main.bounds.width - Constant.YouTubePlayer.collasedSpace
             alpha = 1
+            if pauseWhenIdle {
+                pause()
+            }
         } else if center.x < UIScreen.main.bounds.width/2 {
             x = activeArea.left
             alpha = 0
+            if pauseWhenIdle {
+                resume()
+            }
         } else {
             x = UIScreen.main.bounds.width - activeArea.right - frame.width
             alpha = 0
+            if pauseWhenIdle {
+                resume()
+            }
         }
         let y: CGFloat
         if frame.maxY <= Constant.YouTubePlayer.dimissedSpace + activeArea.top {
@@ -198,56 +231,62 @@ extension YouTubePlayer {
         configuration.allowsAirPlayForMediaPlayback = true
         configuration.allowsPictureInPictureMediaPlayback = true
         
-        let contentFrame = CGRect(origin: .zero, size: frame.size)
-        
-        backgroundVisualEffectView = UIVisualEffectView(frame: contentFrame)
+        backgroundVisualEffectView = UIVisualEffectView(frame: bounds)
         backgroundVisualEffectView.effect = UIBlurEffect(style: .dark)
         backgroundVisualEffectView.clipsToBounds = true
         addSubview(backgroundVisualEffectView)
         
-        webView = WKWebView(frame: contentFrame, configuration: configuration)
+        webView = WKWebView(frame: bounds, configuration: configuration)
         webView.isOpaque = false
         webView.clipsToBounds = true
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = webView.backgroundColor
         webView.scrollView.isScrollEnabled = false
-        webView.navigationDelegate = self
+        if #available(iOS 11.0, *) {
+            webView.scrollView.contentInsetAdjustmentBehavior = .never
+        }
+        addObserver(self, forKeyPath: Constant.YouTubePlayer.webViewLoadingKeyPath, options: .new, context: nil)
         addSubview(webView)
         
-        previewImageView = UIImageView(frame: contentFrame)
+        previewImageView = UIImageView(frame: bounds)
         previewImageView.clipsToBounds = true
         previewImageView.backgroundColor = .clear
         previewImageView.contentMode = .scaleAspectFill
         addSubview(previewImageView)
         
-        coverVisualEffectView = UIVisualEffectView(frame: contentFrame)
+        coverVisualEffectView = UIVisualEffectView(frame: bounds)
         coverVisualEffectView.effect = UIBlurEffect(style: .light)
         coverVisualEffectView.alpha = 0
         coverVisualEffectView.clipsToBounds = true
         addSubview(coverVisualEffectView)
         
-        let pan = UIPanGestureRecognizer(target: self, action: #selector(dragging))
-        addGestureRecognizer(pan)
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(dragging))
+        addGestureRecognizer(panGesture)
     }
     
-    private func present(from view: UIView) {
-        NotificationCenter.default.post(name: .playerWillPresent, object: nil, userInfo: [Constant.YouTubePlayer.videoIdKey: videoId as Any])
-        frame = view.convert(view.bounds, to: UIApplication.shared.keyWindow)
+    private func present(sourceView: UIView) {
+        NotificationCenter.default.post(name: YouTubePlayer.playerWillPresent, object: nil, userInfo: [YouTubePlayer.videoIdKey: videoId as Any])
+        delegate?.youTubePlayer(self, willPresent: videoId!)
+        frame = sourceView.convert(sourceView.bounds, to: sourceView.window)
         isHidden = false
-        UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseIn], animations: { [weak self] in
-            self?.frame = YouTubePlayer.defaultFrame
+        UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseIn], animations: {
+            self.frame = self.initialFrame
         })
-        UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseIn], animations: { [weak self] in
-            self?.frame = YouTubePlayer.defaultFrame
-        }) { [weak self] _ in
-            guard let presentedVideoId = self?.videoId else { return }
-            NotificationCenter.default.post(name: .playerDidPresent, object: nil, userInfo: [Constant.YouTubePlayer.videoIdKey: presentedVideoId as Any])
+        UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseIn], animations: {
+            self.frame = self.initialFrame
+        }) { _ in
+            guard let presentedVideoId = self.videoId else { return }
+            NotificationCenter.default.post(name: YouTubePlayer.playerDidPresent, object: nil, userInfo: [YouTubePlayer.videoIdKey: presentedVideoId as Any])
+            self.delegate?.youTubePlayer(self, didStop: presentedVideoId)
         }
     }
     
-    private func prepare(id: String) {
-        let src = "https://www.youtube.com/embed/\(id)?playsinline=1&modestbranding=1&showinfo=0&rel=0&showsearch=0&loop=\(loop ? 1 : 0)&iv_load_policy=3&autoplay=\(autoPlay ? 1 : 0)&enablejsapi=1".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
-        if autoPlay {
+    private func prepare(videoId: String) {
+        coverVisualEffectView.alpha = 0
+        previewImageView.isHidden = false
+        previewImageView.setImage(with: URL(string: "https://img.youtube.com/vi/\(videoId)/hqdefault.jpg"))
+        let src = "https://www.youtube.com/embed/\(videoId)?playsinline=1&modestbranding=1&showinfo=0&rel=0&showsearch=0&loop=\(isLooped ? 1 : 0)&iv_load_policy=3&autoplay=\(isAutoPlay ? 1 : 0)&enablejsapi=1".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+        if isAutoPlay {
             let body = "<html><head><style type=\"text/css\">\(Constant.YouTubePlayer.css)</style></head><body><div class=\"video-container\"><script type='text/javascript' src='http://www.youtube.com/iframe_api'></script><script type='text/javascript'>function onYouTubeIframeAPIReady(){ytplayer=new YT.Player('playerId',{events:{onReady:onPlayerReady}})}function onPlayerReady(a){a.target.playVideo();}</script><iframe id='playerId' type='text/html' width='\(bounds.width)' height='\(bounds.height)' src='\(src)' frameborder='0'></div></body></html>"
             webView.loadHTMLString(body, baseURL: nil)
         } else {
@@ -255,39 +294,24 @@ extension YouTubePlayer {
             let request = URLRequest(url: url)
             webView.load(request)
         }
-        previewImageView.setImage(with: URL(string: "https://img.youtube.com/vi/\(id)/hqdefault.jpg"))
-        coverVisualEffectView.alpha = 0
     }
     
     private func dismiss() {
         stop()
-        isHidden = hideWhenDismissed
+        isHidden = true
     }
-}
-
-// MARK: - UIApplication
-
-extension UIApplication {
-    var safeAreaInsets: UIEdgeInsets {
-        if #available(iOS 11.0, *) {
-            guard let window = keyWindow else { return .zero }
-            return window.safeAreaInsets
-        }
-        return .zero
-    }
-}
-
-// MARK: - Notification.Name
-
-extension Notification.Name {
-    static let playerDidStop = Notification.Name(rawValue: "playerDidStop")
-    static let playerWillPresent = Notification.Name(rawValue: "playerWillPresent")
-    static let playerDidPresent = Notification.Name(rawValue: "playerDidPresent")
 }
 
 // MARK: - UIView
 
 extension UIView {
+    var safeArea: UIEdgeInsets {
+        if #available(iOS 11.0, *) {
+            return window?.safeAreaInsets ?? safeAreaInsets
+        }
+        return .zero
+    }
+    
     func shadowed(shadowRadius: CGFloat = 15.0,
                   shadowColor: UIColor = .black,
                   shadowOpacity: Float = 0.45,
@@ -302,27 +326,24 @@ extension UIView {
     }
 }
 
-// MARK: - UIView
-
-extension WKWebView {
-    func body(completion: @escaping (String?) -> Void) {
-        evaluateJavaScript("document.getElementsByTagName('body')[0].innerHTML") { innerHTML, error in
-            completion(innerHTML as? String)
-        }
-    }
-}
-
 // MARK: - UIImageView
 
 extension UIImageView {
+    static let imagesCache = NSCache<NSString, UIImage>()
+    
     func setImage(with url: URL?) {
         if let url = url {
-            URLSession.shared.dataTask(with: url) { (data, _, _) in
-                guard let data = data,
-                    let image = UIImage(data: data) else { return }
-                DispatchQueue.main.async() { [weak self] in
-                    self?.image = image
-                }
+            if let image = UIImageView.imagesCache.object(forKey: url.absoluteString as NSString) {
+                self.image = image
+            } else {
+                URLSession.shared.dataTask(with: url) { (data, _, _) in
+                    guard let data = data,
+                        let image = UIImage(data: data) else { return }
+                    DispatchQueue.main.async() { [weak self] in
+                        self?.image = image
+                        UIImageView.imagesCache.setObject(image, forKey: url.absoluteString as NSString)
+                    }
+                }.resume()
             }
         } else {
             image = nil
@@ -339,6 +360,6 @@ struct Constant {
         static let horizontalVelocityThreshold: CGFloat = 3500
         static let blankURLString = "about:blank"
         static let css = ".video-container{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background-color:transparent;}.video-container iframe,.video-container object,.video-container embed{position:absolute;top:0;left:0;width:100%;height:100%;}html,body{margin:0;height:100%;background-color:transparent;}"
-        static let videoIdKey = "videoIdKey"
+        static let webViewLoadingKeyPath = "webView.loading"
     }
 }
