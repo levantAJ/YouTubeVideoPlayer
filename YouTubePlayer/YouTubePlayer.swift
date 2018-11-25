@@ -144,7 +144,8 @@ extension YouTubePlayer {
         let padding: CGFloat = 20
         let width = min(UIScreen.main.bounds.width, maxWidth) - safeArea.left - safeArea.right - padding * 2
         let height = 9 * width / 16
-        frame = CGRect(x: safeArea.left + padding, y: safeArea.top + padding, width: width, height: height)
+        let top = safeArea.top == 0 ? padding : safeArea.top
+        frame = CGRect(x: safeArea.left + padding, y: top, width: width, height: height)
         initialRect = frame
         activeAreaInsets = UIEdgeInsets(top: frame.minY, left: frame.minX, bottom: safeArea.bottom + padding, right: frame.minX)
     }
