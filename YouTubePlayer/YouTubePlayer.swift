@@ -24,15 +24,16 @@ open class YouTubePlayer: UIView {
     public var isAutoPlay: Bool = true
     public var isLooped: Bool = true
     public var pauseWhenIdle: Bool = false
+    public var maxWidth: CGFloat = 500
     public weak var delegate: YouTubePlayerDelegate?
     
     @objc dynamic var webView: WKWebView!
-    var activeArea: UIEdgeInsets = .zero
+    var activeAreaInsets: UIEdgeInsets = .zero
     var previewImageView: UIImageView!
     var backgroundVisualEffectView: UIVisualEffectView!
     var coverVisualEffectView: UIVisualEffectView!
     var draggingBeganPoint: CGPoint = .zero
-    var initialFrame: CGRect = .zero
+    var initialRect: CGRect = .zero
     open override var frame: CGRect {
         didSet {
             backgroundVisualEffectView?.frame.size = frame.size
@@ -141,11 +142,11 @@ extension YouTubePlayer {
     private func layout(sourceView: UIView) {
         let safeArea = sourceView.safeArea
         let padding: CGFloat = 20
-        let width = UIScreen.main.bounds.width - safeArea.left - safeArea.right - padding * 2
+        let width = min(UIScreen.main.bounds.width, maxWidth) - safeArea.left - safeArea.right - padding * 2
         let height = 9 * width / 16
-        frame = CGRect(x: safeArea.left + padding, y: safeArea.top, width: width, height: height)
-        initialFrame = frame
-        activeArea = UIEdgeInsets(top: safeArea.top, left: initialFrame.minX, bottom: safeArea.bottom, right: initialFrame.minX)
+        frame = CGRect(x: safeArea.left + padding, y: safeArea.top + padding, width: width, height: height)
+        initialRect = frame
+        activeAreaInsets = UIEdgeInsets(top: frame.minY, left: frame.minX, bottom: safeArea.bottom + padding, right: frame.minX)
     }
     
     private func dismissIfNeeded(gesture: UIPanGestureRecognizer) -> Bool {
@@ -179,26 +180,26 @@ extension YouTubePlayer {
                 pause()
             }
         } else if center.x < UIScreen.main.bounds.width/2 {
-            x = activeArea.left
+            x = activeAreaInsets.left
             alpha = 0
             if pauseWhenIdle {
                 resume()
             }
         } else {
-            x = UIScreen.main.bounds.width - activeArea.right - frame.width
+            x = UIScreen.main.bounds.width - activeAreaInsets.right - frame.width
             alpha = 0
             if pauseWhenIdle {
                 resume()
             }
         }
         let y: CGFloat
-        if frame.maxY <= Constant.YouTubePlayer.dimissedSpace + activeArea.top {
-            y = -frame.height - activeArea.top
+        if frame.maxY <= Constant.YouTubePlayer.dimissedSpace + activeAreaInsets.top {
+            y = -frame.height - activeAreaInsets.top
             dismissed = true
         } else if center.y < UIScreen.main.bounds.height/2 {
-            y = activeArea.top
+            y = activeAreaInsets.top
         } else {
-            y = UIScreen.main.bounds.height - activeArea.bottom - frame.height
+            y = UIScreen.main.bounds.height - activeAreaInsets.bottom - frame.height
         }
         UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseOut], animations: { [weak self] in
             self?.coverVisualEffectView.alpha = alpha
@@ -210,12 +211,12 @@ extension YouTubePlayer {
     }
     
     private func updateAlpha() {
-        if frame.minX >= activeArea.left && frame.maxX <= UIScreen.main.bounds.width - activeArea.right {
+        if frame.minX >= activeAreaInsets.left && frame.maxX <= UIScreen.main.bounds.width - activeAreaInsets.right {
             coverVisualEffectView.alpha = 0
-        } else if frame.minX < activeArea.left {
-            coverVisualEffectView.alpha = max(min((abs(frame.minX) + activeArea.left) / frame.width, 1), 0)
-        } else if frame.maxX > UIScreen.main.bounds.width - activeArea.right {
-            coverVisualEffectView.alpha = max(min((frame.maxX - UIScreen.main.bounds.width + activeArea.right) / frame.width, 1), 0)
+        } else if frame.minX < activeAreaInsets.left {
+            coverVisualEffectView.alpha = max(min((abs(frame.minX) + activeAreaInsets.left) / frame.width, 1), 0)
+        } else if frame.maxX > UIScreen.main.bounds.width - activeAreaInsets.right {
+            coverVisualEffectView.alpha = max(min((frame.maxX - UIScreen.main.bounds.width + activeAreaInsets.right) / frame.width, 1), 0)
         }
     }
     
@@ -270,10 +271,10 @@ extension YouTubePlayer {
         frame = sourceView.convert(sourceView.bounds, to: sourceView.window)
         isHidden = false
         UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseIn], animations: {
-            self.frame = self.initialFrame
+            self.frame = self.initialRect
         })
         UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseIn], animations: {
-            self.frame = self.initialFrame
+            self.frame = self.initialRect
         }) { _ in
             guard let presentedVideoId = self.videoId else { return }
             NotificationCenter.default.post(name: YouTubePlayer.playerDidPresent, object: nil, userInfo: [YouTubePlayer.videoIdKey: presentedVideoId as Any])
