@@ -1,6 +1,6 @@
 //
-//  YouTubePlayer.swift
-//  YouTubePlayer
+//  YouTubeVideoPlayer.swift
+//  YouTubeVideoPlayer
 //
 //  Created by levantAJ on 24/11/18.
 //  Copyright © 2018 levantAJ. All rights reserved.
@@ -9,13 +9,13 @@
 import UIKit
 import WebKit
 
-public protocol YouTubePlayerDelegate: class {
-    func youTubePlayer(_ player: YouTubePlayer, didStop videoId: String)
-    func youTubePlayer(_ player: YouTubePlayer, willPresent videoId: String)
-    func youTubePlayer(_ player: YouTubePlayer, didPresent videoId: String)
+public protocol YouTubeVideoPlayerDelegate: class {
+    func youTubePlayer(_ player: YouTubeVideoPlayer, didStop videoId: String)
+    func youTubePlayer(_ player: YouTubeVideoPlayer, willPresent videoId: String)
+    func youTubePlayer(_ player: YouTubeVideoPlayer, didPresent videoId: String)
 }
 
-open class YouTubePlayer: UIView {
+open class YouTubeVideoPlayer: UIView {
     public static let videoIdKey = "videoIdKey"
     public static let playerDidStop = Notification.Name(rawValue: "com.levantAJ.YouTubePlayer.playerDidStop")
     public static let playerWillPresent = Notification.Name(rawValue: "com.levantAJ.YouTubePlayer.playerWillPresent")
@@ -25,7 +25,7 @@ open class YouTubePlayer: UIView {
     public var isLooped: Bool = true
     public var pauseWhenIdle: Bool = false
     public var maxWidth: CGFloat = 500
-    public weak var delegate: YouTubePlayerDelegate?
+    public weak var delegate: YouTubeVideoPlayerDelegate?
     
     @objc dynamic var webView: WKWebView!
     var activeAreaInsets: UIEdgeInsets = .zero
@@ -43,8 +43,8 @@ open class YouTubePlayer: UIView {
         }
     }
     
-    public static let shared: YouTubePlayer = {
-        return YouTubePlayer(frame: .zero)
+    public static let shared: YouTubeVideoPlayer = {
+        return YouTubeVideoPlayer(frame: .zero)
     }()
     
     override init(frame: CGRect) {
@@ -102,7 +102,7 @@ open class YouTubePlayer: UIView {
         webView.load(request)
         previewImageView.image = nil
         coverVisualEffectView.alpha = 0
-        NotificationCenter.default.post(name: YouTubePlayer.playerDidStop, object: nil, userInfo: [YouTubePlayer.videoIdKey: stoppedVideoId as Any])
+        NotificationCenter.default.post(name: YouTubeVideoPlayer.playerDidStop, object: nil, userInfo: [YouTubeVideoPlayer.videoIdKey: stoppedVideoId as Any])
         delegate?.youTubePlayer(self, didStop: stoppedVideoId!)
     }
     
@@ -117,7 +117,7 @@ open class YouTubePlayer: UIView {
 
 // MARK: - User Interactions
 
-extension YouTubePlayer {
+extension YouTubeVideoPlayer {
     @objc func dragging(_ gesture: UIPanGestureRecognizer) {
         if gesture.state == .began {
             draggingBeganPoint = gesture.location(in: gesture.view)
@@ -138,7 +138,7 @@ extension YouTubePlayer {
 
 // MARK: - Privates
 
-extension YouTubePlayer {
+extension YouTubeVideoPlayer {
     private func layout(sourceView: UIView) {
         let safeArea = sourceView.safeArea
         let padding: CGFloat = 20
@@ -267,7 +267,7 @@ extension YouTubePlayer {
     }
     
     private func present(sourceView: UIView) {
-        NotificationCenter.default.post(name: YouTubePlayer.playerWillPresent, object: nil, userInfo: [YouTubePlayer.videoIdKey: videoId as Any])
+        NotificationCenter.default.post(name: YouTubeVideoPlayer.playerWillPresent, object: nil, userInfo: [YouTubeVideoPlayer.videoIdKey: videoId as Any])
         delegate?.youTubePlayer(self, willPresent: videoId!)
         frame = sourceView.convert(sourceView.bounds, to: sourceView.window)
         isHidden = false
@@ -278,7 +278,7 @@ extension YouTubePlayer {
             self.frame = self.initialRect
         }) { _ in
             guard let presentedVideoId = self.videoId else { return }
-            NotificationCenter.default.post(name: YouTubePlayer.playerDidPresent, object: nil, userInfo: [YouTubePlayer.videoIdKey: presentedVideoId as Any])
+            NotificationCenter.default.post(name: YouTubeVideoPlayer.playerDidPresent, object: nil, userInfo: [YouTubeVideoPlayer.videoIdKey: presentedVideoId as Any])
             self.delegate?.youTubePlayer(self, didStop: presentedVideoId)
         }
     }

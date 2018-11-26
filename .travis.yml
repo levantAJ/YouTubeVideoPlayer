@@ -1,4 +1,4 @@
 language: swift
-xcode_project: YouTubePlayer.xcodeproj
-xcode_scheme: YouTubePlayerTests
+xcode_project: YouTubeVideoPlayer.xcodeproj
+xcode_scheme: YouTubeVideoPlayerTests
 xcode_destination: platform=iOS Simulator,OS=11.3,name=iPhone X
