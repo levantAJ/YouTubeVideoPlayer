@@ -66,9 +66,9 @@ player.delegate = self
 
 ##### Notifications:
 
-- YouTubeVideoPlayer.playerDidStop
-- YouTubeVideoPlayer.playerWillPresent
-- YouTubeVideoPlayer.playerDidPresent
+- `YouTubeVideoPlayer.playerDidStop`
+- `YouTubeVideoPlayer.playerWillPresent`
+- `YouTubeVideoPlayer.playerDidPresent`
 
 Examples:
 
