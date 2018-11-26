@@ -1,15 +1,15 @@
 //
-//  YouTubePlayerTests.swift
-//  YouTubePlayerTests
+//  YouTubeVideoPlayerTests.swift
+//  YouTubeVideoPlayerTests
 //
 //  Created by levantAJ on 24/11/18.
 //  Copyright © 2018 levantAJ. All rights reserved.
 //
 
 import XCTest
-@testable import YouTubePlayer
+@testable import YouTubeVideoPlayer
 
-class YouTubePlayerTests: XCTestCase {
+class YouTubeVideoPlayerTests: XCTestCase {
 
     override func setUp() {
         // Put setup code here. This method is called before the invocation of each test method in the class.

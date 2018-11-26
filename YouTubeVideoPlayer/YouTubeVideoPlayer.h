@@ -14,6 +14,6 @@ FOUNDATION_EXPORT double YouTubeVideoPlayerVersionNumber;
 //! Project version string for YouTubeVideoPlayer.
 FOUNDATION_EXPORT const unsigned char YouTubeVideoPlayerVersionString[];
 
-// In this header, you should import all the public headers of your framework using statements like #import <YouTubePlayer/PublicHeader.h>
+// In this header, you should import all the public headers of your framework using statements like #import <YouTubeVideoPlayer/PublicHeader.h>
 
 

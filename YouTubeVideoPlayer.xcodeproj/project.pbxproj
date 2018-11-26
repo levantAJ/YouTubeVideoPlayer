@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		3354B43721A951E5000068D4 /* YouTubeVideoPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3354B42D21A951E5000068D4 /* YouTubeVideoPlayer.framework */; };
-		3354B43C21A951E5000068D4 /* YouTubePlayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3354B43B21A951E5000068D4 /* YouTubePlayerTests.swift */; };
+		3354B43C21A951E5000068D4 /* YouTubeVideoPlayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3354B43B21A951E5000068D4 /* YouTubeVideoPlayerTests.swift */; };
 		3354B43E21A951E5000068D4 /* YouTubeVideoPlayer.h in Headers */ = {isa = PBXBuildFile; fileRef = 3354B43021A951E5000068D4 /* YouTubeVideoPlayer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3354B44821A95350000068D4 /* YouTubeVideoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3354B44721A95350000068D4 /* YouTubeVideoPlayer.swift */; };
 /* End PBXBuildFile section */
@@ -28,7 +28,7 @@
 		3354B43021A951E5000068D4 /* YouTubeVideoPlayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YouTubeVideoPlayer.h; sourceTree = "<group>"; };
 		3354B43121A951E5000068D4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3354B43621A951E5000068D4 /* YouTubeVideoPlayerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YouTubeVideoPlayerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		3354B43B21A951E5000068D4 /* YouTubePlayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubePlayerTests.swift; sourceTree = "<group>"; };
+		3354B43B21A951E5000068D4 /* YouTubeVideoPlayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeVideoPlayerTests.swift; sourceTree = "<group>"; };
 		3354B43D21A951E5000068D4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3354B44721A95350000068D4 /* YouTubeVideoPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeVideoPlayer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -83,7 +83,7 @@
 		3354B43A21A951E5000068D4 /* YouTubeVideoPlayerTests */ = {
 			isa = PBXGroup;
 			children = (
-				3354B43B21A951E5000068D4 /* YouTubePlayerTests.swift */,
+				3354B43B21A951E5000068D4 /* YouTubeVideoPlayerTests.swift */,
 				3354B43D21A951E5000068D4 /* Info.plist */,
 			);
 			path = YouTubeVideoPlayerTests;
@@ -206,7 +206,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3354B43C21A951E5000068D4 /* YouTubePlayerTests.swift in Sources */,
+				3354B43C21A951E5000068D4 /* YouTubeVideoPlayerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -403,13 +403,13 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = YouTubePlayerTests/Info.plist;
+				INFOPLIST_FILE = YouTubeVideoPlayerTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.levantAJ.YouTubePlayerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.levantAJ.YouTubeVideoPlayerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -421,13 +421,13 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = YouTubePlayerTests/Info.plist;
+				INFOPLIST_FILE = YouTubeVideoPlayerTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.levantAJ.YouTubePlayerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.levantAJ.YouTubeVideoPlayerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";

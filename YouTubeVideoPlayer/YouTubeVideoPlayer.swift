@@ -10,16 +10,16 @@ import UIKit
 import WebKit
 
 public protocol YouTubeVideoPlayerDelegate: class {
-    func youTubePlayer(_ player: YouTubeVideoPlayer, didStop videoId: String)
-    func youTubePlayer(_ player: YouTubeVideoPlayer, willPresent videoId: String)
-    func youTubePlayer(_ player: YouTubeVideoPlayer, didPresent videoId: String)
+    func youTubeVideoPlayer(_ player: YouTubeVideoPlayer, didStop videoId: String)
+    func youTubeVideoPlayer(_ player: YouTubeVideoPlayer, willPresent videoId: String)
+    func youTubeVideoPlayer(_ player: YouTubeVideoPlayer, didPresent videoId: String)
 }
 
 open class YouTubeVideoPlayer: UIView {
     public static let videoIdKey = "videoIdKey"
-    public static let playerDidStop = Notification.Name(rawValue: "com.levantAJ.YouTubePlayer.playerDidStop")
-    public static let playerWillPresent = Notification.Name(rawValue: "com.levantAJ.YouTubePlayer.playerWillPresent")
-    public static let playerDidPresent = Notification.Name(rawValue: "com.levantAJ.YouTubePlayer.playerDidPresent")
+    public static let playerDidStop = Notification.Name(rawValue: "com.levantAJ.YouTubeVideoPlayer.playerDidStop")
+    public static let playerWillPresent = Notification.Name(rawValue: "com.levantAJ.YouTubeVideoPlayer.playerWillPresent")
+    public static let playerDidPresent = Notification.Name(rawValue: "com.levantAJ.YouTubeVideoPlayer.playerDidPresent")
     public private(set) var videoId: String?
     public var isAutoPlay: Bool = true
     public var isLooped: Bool = true
@@ -53,7 +53,7 @@ open class YouTubeVideoPlayer: UIView {
     }
     
     deinit {
-        removeObserver(self, forKeyPath: Constant.YouTubePlayer.webViewLoadingKeyPath)
+        removeObserver(self, forKeyPath: Constant.YouTubeVideoPlayer.webViewLoadingKeyPath)
     }
     
     public required init?(coder aDecoder: NSCoder) {
@@ -72,7 +72,7 @@ open class YouTubeVideoPlayer: UIView {
     
     open override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if let keyPath = keyPath,
-            keyPath == Constant.YouTubePlayer.webViewLoadingKeyPath,
+            keyPath == Constant.YouTubeVideoPlayer.webViewLoadingKeyPath,
             let loading = change?[.newKey] as? Bool,
             loading == true {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
@@ -81,7 +81,7 @@ open class YouTubeVideoPlayer: UIView {
                 }
                 self?.previewImageView.image = nil
                 self?.previewImageView.isHidden = true
-                debugPrint("YouTubePlayer is loaded.")
+                debugPrint("YouTubeVideoPlayer is loaded.")
             }
         }
     }
@@ -97,13 +97,13 @@ open class YouTubeVideoPlayer: UIView {
     open func stop() {
         let stoppedVideoId = videoId
         videoId = nil
-        let url = URL(string: Constant.YouTubePlayer.blankURLString)!
+        let url = URL(string: Constant.YouTubeVideoPlayer.blankURLString)!
         let request = URLRequest(url: url)
         webView.load(request)
         previewImageView.image = nil
         coverVisualEffectView.alpha = 0
         NotificationCenter.default.post(name: YouTubeVideoPlayer.playerDidStop, object: nil, userInfo: [YouTubeVideoPlayer.videoIdKey: stoppedVideoId as Any])
-        delegate?.youTubePlayer(self, didStop: stoppedVideoId!)
+        delegate?.youTubeVideoPlayer(self, didStop: stoppedVideoId!)
     }
     
     open func resume() {
@@ -152,8 +152,8 @@ extension YouTubeVideoPlayer {
     
     private func dismissIfNeeded(gesture: UIPanGestureRecognizer) -> Bool {
         let velocity = gesture.velocity(in: gesture.view)
-        guard velocity.x < -Constant.YouTubePlayer.horizontalVelocityThreshold
-            || velocity.x > Constant.YouTubePlayer.horizontalVelocityThreshold else { return false }
+        guard velocity.x < -Constant.YouTubeVideoPlayer.horizontalVelocityThreshold
+            || velocity.x > Constant.YouTubeVideoPlayer.horizontalVelocityThreshold else { return false }
         let x = frame.origin.x < draggingBeganPoint.x ? -frame.width : UIScreen.main.bounds.width + frame.width
         let y = frame.origin.y
         UIView.animate(withDuration: 0.1, delay: 0.0, options: [.curveEaseIn], animations: { [weak self] in
@@ -168,14 +168,14 @@ extension YouTubeVideoPlayer {
         let x: CGFloat
         let alpha: CGFloat
         var dismissed = false
-        if frame.minX + frame.width <= Constant.YouTubePlayer.collasedSpace * 4 {
-            x = Constant.YouTubePlayer.collasedSpace - frame.width
+        if frame.minX + frame.width <= Constant.YouTubeVideoPlayer.collasedSpace * 4 {
+            x = Constant.YouTubeVideoPlayer.collasedSpace - frame.width
             alpha = 1
             if pauseWhenIdle {
                 pause()
             }
-        } else if UIScreen.main.bounds.width - frame.minX <= Constant.YouTubePlayer.collasedSpace * 4 {
-            x = UIScreen.main.bounds.width - Constant.YouTubePlayer.collasedSpace
+        } else if UIScreen.main.bounds.width - frame.minX <= Constant.YouTubeVideoPlayer.collasedSpace * 4 {
+            x = UIScreen.main.bounds.width - Constant.YouTubeVideoPlayer.collasedSpace
             alpha = 1
             if pauseWhenIdle {
                 pause()
@@ -194,7 +194,7 @@ extension YouTubeVideoPlayer {
             }
         }
         let y: CGFloat
-        if frame.maxY <= Constant.YouTubePlayer.dimissedSpace + activeAreaInsets.top {
+        if frame.maxY <= Constant.YouTubeVideoPlayer.dimissedSpace + activeAreaInsets.top {
             y = -frame.height - activeAreaInsets.top
             dismissed = true
         } else if center.y < UIScreen.main.bounds.height/2 {
@@ -247,7 +247,7 @@ extension YouTubeVideoPlayer {
         if #available(iOS 11.0, *) {
             webView.scrollView.contentInsetAdjustmentBehavior = .never
         }
-        addObserver(self, forKeyPath: Constant.YouTubePlayer.webViewLoadingKeyPath, options: .new, context: nil)
+        addObserver(self, forKeyPath: Constant.YouTubeVideoPlayer.webViewLoadingKeyPath, options: .new, context: nil)
         addSubview(webView)
         
         previewImageView = UIImageView(frame: bounds)
@@ -268,7 +268,7 @@ extension YouTubeVideoPlayer {
     
     private func present(sourceView: UIView) {
         NotificationCenter.default.post(name: YouTubeVideoPlayer.playerWillPresent, object: nil, userInfo: [YouTubeVideoPlayer.videoIdKey: videoId as Any])
-        delegate?.youTubePlayer(self, willPresent: videoId!)
+        delegate?.youTubeVideoPlayer(self, willPresent: videoId!)
         frame = sourceView.convert(sourceView.bounds, to: sourceView.window)
         isHidden = false
         UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseIn], animations: {
@@ -279,7 +279,7 @@ extension YouTubeVideoPlayer {
         }) { _ in
             guard let presentedVideoId = self.videoId else { return }
             NotificationCenter.default.post(name: YouTubeVideoPlayer.playerDidPresent, object: nil, userInfo: [YouTubeVideoPlayer.videoIdKey: presentedVideoId as Any])
-            self.delegate?.youTubePlayer(self, didStop: presentedVideoId)
+            self.delegate?.youTubeVideoPlayer(self, didStop: presentedVideoId)
         }
     }
     
@@ -289,7 +289,7 @@ extension YouTubeVideoPlayer {
         previewImageView.setImage(with: URL(string: "https://img.youtube.com/vi/\(videoId)/hqdefault.jpg"))
         let src = "https://www.youtube.com/embed/\(videoId)?playsinline=1&modestbranding=1&showinfo=0&rel=0&showsearch=0&loop=\(isLooped ? 1 : 0)&iv_load_policy=3&autoplay=\(isAutoPlay ? 1 : 0)&enablejsapi=1".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
         if isAutoPlay {
-            let body = "<html><head><style type=\"text/css\">\(Constant.YouTubePlayer.css)</style></head><body><div class=\"video-container\"><script type='text/javascript' src='http://www.youtube.com/iframe_api'></script><script type='text/javascript'>function onYouTubeIframeAPIReady(){ytplayer=new YT.Player('playerId',{events:{onReady:onPlayerReady}})}function onPlayerReady(a){a.target.playVideo();}</script><iframe id='playerId' type='text/html' width='\(bounds.width)' height='\(bounds.height)' src='\(src)' frameborder='0'></div></body></html>"
+            let body = "<html><head><style type=\"text/css\">\(Constant.YouTubeVideoPlayer.css)</style></head><body><div class=\"video-container\"><script type='text/javascript' src='http://www.youtube.com/iframe_api'></script><script type='text/javascript'>function onYouTubeIframeAPIReady(){ytplayer=new YT.Player('playerId',{events:{onReady:onPlayerReady}})}function onPlayerReady(a){a.target.playVideo();}</script><iframe id='playerId' type='text/html' width='\(bounds.width)' height='\(bounds.height)' src='\(src)' frameborder='0'></div></body></html>"
             webView.loadHTMLString(body, baseURL: nil)
         } else {
             let url = URL(string: src)!
@@ -356,7 +356,7 @@ extension UIImageView {
 // MARK: - Constant
 
 struct Constant {
-    struct YouTubePlayer {
+    struct YouTubeVideoPlayer {
         static let collasedSpace: CGFloat = 30
         static let dimissedSpace: CGFloat = 30
         static let horizontalVelocityThreshold: CGFloat = 3500
