@@ -16,8 +16,8 @@ Library for embedding and controlling YouTube videos in your iOS applications!
 
 ## Requirements
 
-- iOS 9.0 or later
-- Xcode 9.0 or later
+- iOS 8.0 or later
+- Xcode 10.0 or later
 
 ## Installation
 There is a way to use YouTubeVideoPlayer in your project:
@@ -28,7 +28,7 @@ There is a way to use YouTubeVideoPlayer in your project:
 ### Installation with CocoaPods
 
 ```
-pod 'YouTubeVideoPlayer', '1.0'
+pod 'YouTubeVideoPlayer', '1.1'
 ```
 
 ### Manually
