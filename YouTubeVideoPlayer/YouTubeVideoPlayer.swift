@@ -229,9 +229,11 @@ extension YouTubeVideoPlayer {
         if #available(iOS 10.0, *) {
             configuration.mediaTypesRequiringUserActionForPlayback = []
         }
-        configuration.requiresUserActionForMediaPlayback = false
-        configuration.allowsAirPlayForMediaPlayback = true
-        configuration.allowsPictureInPictureMediaPlayback = true
+        if #available(iOS 9.0, *) {
+            configuration.requiresUserActionForMediaPlayback = false
+            configuration.allowsAirPlayForMediaPlayback = true
+            configuration.allowsPictureInPictureMediaPlayback = true
+        }
         
         backgroundVisualEffectView = UIVisualEffectView(frame: bounds)
         backgroundVisualEffectView.effect = UIBlurEffect(style: .dark)
