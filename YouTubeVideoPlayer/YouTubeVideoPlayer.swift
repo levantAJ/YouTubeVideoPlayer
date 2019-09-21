@@ -148,6 +148,7 @@ extension YouTubeVideoPlayer {
         frame = CGRect(x: safeArea.left + padding, y: top, width: width, height: height)
         initialRect = frame
         activeAreaInsets = UIEdgeInsets(top: frame.minY, left: frame.minX, bottom: safeArea.bottom + padding, right: frame.minX)
+        superview?.bringSubviewToFront(self)
     }
     
     private func dismissIfNeeded(gesture: UIPanGestureRecognizer) -> Bool {

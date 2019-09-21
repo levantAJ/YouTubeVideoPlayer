@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name = 'YouTubeVideoPlayer'
-  s.version = '1.1'
+  s.version = '1.2'
   s.summary = 'YouTube video player'
   s.description = <<-DESC
 Library for embedding and controlling YouTube videos in your iOS applications written on Swift 4.2 by levantAJ
